@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>문도 피구 - 1vs1 프로토타입</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 15px; left: 15px; pointer-events: none; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; z-index: 10; }
+        h2 { margin: 0 0 10px 0; color: #f1c40f; }
+        p { margin: 5px 0; font-size: 14px; }
+        .highlight { color: #f1c40f; font-weight: bold; }
+        
+        #game-over {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); padding: 40px; border-radius: 20px; text-align: center;
+            display: none; border: 2px solid #fff; z-index: 20;
+        }
+        #game-over h1 { margin: 0 0 20px 0; font-size: 48px; }
+        #game-over p { font-size: 20px; color: #ccc; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>문도 피구 (1 vs 1)</h2>
+        <div style="display: flex; gap: 40px;">
+            <div>
+                <h3 style="color: #3498db; margin: 0 0 5px 0;">🔵 Player 1 (Left)</h3>
+                <p>이동: W, A, S, D</p>
+                <p>대쉬: L-Shift</p>
+                <p>공격: Space (꾹 눌러 차징)</p>
+            </div>
+            <div>
+                <h3 style="color: #e74c3c; margin: 0 0 5px 0;">🔴 Player 2 (Right)</h3>
+                <p>이동: 방향키 (Arrows)</p>
+                <p>대쉬: R-Shift</p>
+                <p>공격: Enter (꾹 눌러 차징)</p>
+            </div>
+        </div>
+        <p style="margin-top: 15px; font-size: 12px; color: #ccc;">*공격 시 투사체는 상대방 위치를 향해 발사됩니다.</p>
+    </div>
+    
+    <div id="game-over">
+        <h1 id="winner-text">Player 1 승리!</h1>
+        <p>재시작하려면 [ R ] 키를 누르세요</p>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverUI = document.getElementById('game-over');
+        const winnerText = document.getElementById('winner-text');
+
+        let player1, player2, projectiles, gameOver;
+        let lastTime = performance.now();
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if(!player1) resetGame();
+        }
+        window.addEventListener('resize', resize);
+
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if(gameOver && e.code === 'KeyR') resetGame();
+        });
+        window.addEventListener('keyup', e => {
+            keys[e.code] = false;
+        });
+
+        function createPlayer(isLeft) {
+            return {
+                x: isLeft ? canvas.width * 0.25 : canvas.width * 0.75,
+                y: canvas.height / 2,
+                radius: 20,
+                baseSpeed: 350,
+                color: isLeft ? '#3498db' : '#e74c3c',
+                isCharging: false,
+                chargeTime: 0,
+                maxChargeTime: 0.8,
+                isDashing: false,
+                dashTimer: 0,
+                dashCooldown: 0,
+                dashDuration: 0.2,
+                dashSpeed: 1000,
+                dashDir: {x: 0, y: 0},
+                hp: 100,
+                controls: isLeft 
+                    ? { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', dash: 'ShiftLeft', attack: 'Space' }
+                    : { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', dash: 'ShiftRight', attack: 'Enter' }
+            };
+        }
+
+        function resetGame() {
+            player1 = createPlayer(true);
+            player2 = createPlayer(false);
+            projectiles = [];
+            gameOver = false;
+            gameOverUI.style.display = 'none';
+            lastTime = performance.now();
+        }
+
+        function shoot(source, target) {
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            
+            let isFullyCharged = source.chargeTime >= source.maxChargeTime;
+            let pSpeed = isFullyCharged ? 1200 : 700; 
+            let pRadius = isFullyCharged ? 18 : 12;
+            let pColor = isFullyCharged ? '#f1c40f' : source.color;
+            
+            projectiles.push({
+                x: source.x,
+                y: source.y,
+                vx: (dx/dist) * pSpeed,
+                vy: (dy/dist) * pSpeed,
+                radius: pRadius,
+                color: pColor,
+                isSuper: isFullyCharged,
+                owner: source
+            });
+        }
+
+        function updatePlayer(p, target, dt, isLeft) {
+            if (p.dashCooldown > 0) p.dashCooldown -= dt;
+            
+            let dx = 0; let dy = 0;
+            if (keys[p.controls.up]) dy -= 1;
+            if (keys[p.controls.down]) dy += 1;
+            if (keys[p.controls.left]) dx -= 1;
+            if (keys[p.controls.right]) dx += 1;
+            
+            if (dx !== 0 || dy !== 0) {
+                const len = Math.hypot(dx, dy);
+                dx /= len; dy /= len;
+            }
+            
+            if (keys[p.controls.dash] && p.dashCooldown <= 0 && !p.isDashing) {
+                p.isDashing = true;
+                p.dashTimer = p.dashDuration;
+                p.dashCooldown = 2.0;
+                
+                if (dx === 0 && dy === 0) {
+                    p.dashDir.x = isLeft ? -1 : 1; 
+                    p.dashDir.y = 0;
+                } else {
+                    p.dashDir.x = dx;
+                    p.dashDir.y = dy;
+                }
+                
+                p.isCharging = false;
+                p.chargeTime = 0;
+            }
+            
+            if (p.isDashing) {
+                p.dashTimer -= dt;
+                if (p.dashTimer <= 0) p.isDashing = false;
+            } else {
+                if (keys[p.controls.attack]) {
+                    p.isCharging = true;
+                    p.chargeTime = Math.min(p.chargeTime + dt, p.maxChargeTime);
+                } else if (p.isCharging) {
+                    shoot(p, target);
+                    p.isCharging = false;
+                    p.chargeTime = 0;
+                }
+            }
+            
+            let currentSpeed = p.baseSpeed;
+            if (p.isDashing) {
+                currentSpeed = p.dashSpeed;
+                dx = p.dashDir.x;
+                dy = p.dashDir.y;
+            } else if (p.isCharging) {
+                currentSpeed = p.baseSpeed * 0.5;
+            }
+            
+            p.x += dx * currentSpeed * dt;
+            p.y += dy * currentSpeed * dt;
+            
+            // Limit boundaries
+            p.y = Math.max(p.radius, Math.min(canvas.height - p.radius, p.y));
+            if (isLeft) {
+                p.x = Math.max(p.radius, Math.min(canvas.width / 2 - p.radius, p.x));
+            } else {
+                p.x = Math.max(canvas.width / 2 + p.radius, Math.min(canvas.width - p.radius, p.x));
+            }
+        }
+
+        function update(dt) {
+            if (gameOver) return;
+
+            updatePlayer(player1, player2, dt, true);
+            updatePlayer(player2, player1, dt, false);
+            
+            // Projectiles update & collision
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                
+                if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+                
+                let target = p.owner === player1 ? player2 : player1;
+                
+                // 대쉬 중이면 무적 판정
+                if (!target.isDashing) {
+                    let dist = Math.hypot(p.x - target.x, p.y - target.y);
+                    if (dist < p.radius + target.radius) {
+                        let dmg = p.isSuper ? 30 : 15;
+                        target.hp -= dmg;
+                        projectiles.splice(i, 1);
+                        
+                        // 이펙트 피격 표시용 (화면 진동이나 색상 변화 등으로 응용 가능)
+                        
+                        if (target.hp <= 0) {
+                            target.hp = 0;
+                            gameOver = true;
+                            winnerText.innerText = p.owner === player1 ? "🔵 Player 1 승리!" : "🔴 Player 2 승리!";
+                            winnerText.style.color = p.owner.color;
+                            gameOverUI.style.display = 'block';
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawHPBar(p, isLeft) {
+            const barWidth = Math.min(350, canvas.width / 2 - 100);
+            const barHeight = 25;
+            const y = 30;
+            const x = isLeft ? canvas.width/2 - barWidth - 20 : canvas.width/2 + 20;
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(x, y, barWidth, barHeight);
+            
+            ctx.fillStyle = p.color;
+            const hpWidth = Math.max(0, barWidth * (p.hp / 100));
+            // HP바가 중앙쪽에서 바깥으로 렌더링되도록 (선택 사항)
+            if (isLeft) {
+                ctx.fillRect(x + barWidth - hpWidth, y, hpWidth, barHeight);
+            } else {
+                ctx.fillRect(x, y, hpWidth, barHeight);
+            }
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, barWidth, barHeight);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if (isLeft) {
+                ctx.fillText(`P1`, x - 20, y + barHeight/2);
+            } else {
+                ctx.fillText(`P2`, x + barWidth + 20, y + barHeight/2);
+            }
+        }
+
+        function drawPlayer(p) {
+            if(p.isCharging) {
+                ctx.beginPath();
+                const startAngle = -Math.PI/2;
+                const endAngle = startAngle + (p.chargeTime / p.maxChargeTime) * Math.PI * 2;
+                ctx.arc(p.x, p.y, p.radius + 8, startAngle, endAngle);
+                ctx.strokeStyle = p.chargeTime >= p.maxChargeTime ? '#f1c40f' : 'white';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+            ctx.fillStyle = p.color;
+            if (p.isDashing) {
+                ctx.globalAlpha = 0.5;
+                
+                // 잔상 효과
+                ctx.beginPath();
+                ctx.arc(p.x - p.dashDir.x*20, p.y - p.dashDir.y*20, p.radius, 0, Math.PI*2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = 0.2;
+                ctx.fill();
+            }
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            
+            if (p.dashCooldown > 0) {
+                ctx.fillStyle = '#ccc';
+                ctx.font = '12px Tahoma';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.dashCooldown.toFixed(1), p.x, p.y + p.radius + 15);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 중앙 분리선
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.setLineDash([15, 15]);
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            if(player1 && player2) {
+                drawHPBar(player1, true);
+                drawHPBar(player2, false);
+
+                drawPlayer(player1);
+                drawPlayer(player2);
+            }
+
+            projectiles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.vx*0.06, p.y - p.vy*0.06);
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = p.radius * 1.5;
+                ctx.lineCap = 'round';
+                ctx.globalAlpha = 0.4;
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            });
+        }
+
+        function loop() {
+            const now = performance.now();
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+            
+            update(Math.min(dt, 0.1));
+            draw();
+            
+            requestAnimationFrame(loop);
+        }
+
+        resize();
+        loop();
+    </script>
+</body>
+</html>
