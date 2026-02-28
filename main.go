@@ -31,6 +31,7 @@ type GameSettings struct {
 	MissileRadius         float64 `json:"missileRadius"`
 	SuperMissileRadius    float64 `json:"superMissileRadius"`
 	MaxChargeTime         float64 `json:"maxChargeTime"`
+	MinChargeTime         float64 `json:"minChargeTime"`
 	ChargeSpeedMult       float64 `json:"chargeSpeedMult"`
 	DashDistance          float64 `json:"dashDistance"`
 	DashCooldownLimit     float64 `json:"dashCooldownLimit"`
@@ -44,22 +45,23 @@ type GameSettings struct {
 var globalConfig = GameSettings{
 	BoardWidth:            1600.0,
 	BoardHeight:           900.0,
-	PlayerRadius:          70.0,
-	BaseSpeed:             400.0,
-	MissileSpeed:          2000.0,
-	SuperMissileSpeed:     2300.0,
+	PlayerRadius:          50.0,
+	BaseSpeed:             200.0,
+	MissileSpeed:          600.0,
+	SuperMissileSpeed:     1200.0,
 	ReflectedMissileSpeed: 3000.0,
-	MissileRadius:         12.0,
-	SuperMissileRadius:    18.0,
-	MaxChargeTime:         0.4,
+	MissileRadius:         10.0,
+	SuperMissileRadius:    20.0,
+	MaxChargeTime:         0.5,
+	MinChargeTime:         0.15,
 	ChargeSpeedMult:       0.5,
-	DashDistance:          200.0,
+	DashDistance:          150.0,
 	DashCooldownLimit:     2.0,
-	ReflectCooldownLimit:  4.0,
-	AttackCooldownLimit:   0.5,
+	ReflectCooldownLimit:  3.0,
+	AttackCooldownLimit:   0.8,
 	MaxHP:                 100,
-	MissileDamage:         20,
-	SuperMissileDamage:    40,
+	MissileDamage:         15,
+	SuperMissileDamage:    35,
 }
 
 type PlayerState struct {
@@ -110,9 +112,10 @@ var (
 		Projectiles: make([]Projectile, 0),
 		GameOver:    false,
 	}
-	stateMutex   sync.Mutex
+	stateMutex   = &sync.Mutex{}
 	clients      = make(map[*websocket.Conn]string) // mapping conn to player ID ("p1", "p2")
-	clientsMutex sync.Mutex
+	clientsMutex = &sync.Mutex{}
+	writeMutexes = make(map[*websocket.Conn]*sync.Mutex) // New mutex map for writes
 	projCounter  = 0
 )
 
@@ -215,12 +218,14 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	if role == "p1" || role == "p2" || role == "spectator" {
 		clients[ws] = role
+		writeMutexes[ws] = &sync.Mutex{}
 	}
 	clientsMutex.Unlock()
 
 	defer func() {
 		clientsMutex.Lock()
 		delete(clients, ws)
+		delete(writeMutexes, ws)
 		clientsMutex.Unlock()
 		ws.Close()
 	}()
@@ -233,7 +238,16 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		Height:   globalConfig.BoardHeight,
 		Settings: globalConfig,
 	}
-	ws.WriteJSON(initMsg)
+
+	clientsMutex.Lock()
+	wm, ok := writeMutexes[ws]
+	clientsMutex.Unlock()
+
+	if ok {
+		wm.Lock()
+		ws.WriteJSON(initMsg)
+		wm.Unlock()
+	}
 
 	// Listen for inputs
 	for {
@@ -366,11 +380,13 @@ func processInput(role string, input ClientInput) {
 				p.ChargeTime = globalConfig.MaxChargeTime
 			}
 		} else if p.IsCharging {
-			// Release -> Shoot
-			shoot(role, p, input.MouseX, input.MouseY)
+			// Release -> Shoot (only if charge time is >= MinChargeTime)
+			if p.ChargeTime >= globalConfig.MinChargeTime {
+				shoot(role, p, input.MouseX, input.MouseY)
+				p.AttackCooldown = globalConfig.AttackCooldownLimit
+			}
 			p.IsCharging = false
 			p.ChargeTime = 0
-			p.AttackCooldown = globalConfig.AttackCooldownLimit
 		}
 	}
 
@@ -555,10 +571,19 @@ func broadcastState() {
 	defer clientsMutex.Unlock()
 
 	for ws := range clients {
+		wm, ok := writeMutexes[ws]
+		if !ok {
+			continue
+		}
+
+		wm.Lock()
 		err := ws.WriteMessage(websocket.TextMessage, stateJSON)
+		wm.Unlock()
+
 		if err != nil {
 			ws.Close()
 			delete(clients, ws)
+			delete(writeMutexes, ws)
 		}
 	}
 }

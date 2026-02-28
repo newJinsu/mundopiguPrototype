@@ -276,7 +276,9 @@
             <div class="setting-row"><label>반사 미사일 속도</label><input type="number" id="set-reflectedMissileSpeed"
                     step="10">
             </div>
-            <div class="setting-row"><label>기모으는 시간(초)</label><input type="number" id="set-maxChargeTime" step="0.1">
+            <div class="setting-row"><label>최소 차지 시간(초)</label><input type="number" id="set-minChargeTime" step="0.05">
+            </div>
+            <div class="setting-row"><label>최대 차지 시간(초)</label><input type="number" id="set-maxChargeTime" step="0.1">
             </div>
             <div class="setting-row"><label>차지 중 이속 비율</label><input type="number" id="set-chargeMult" step="0.1"></div>
             <div class="setting-row"><label>대쉬 거리</label><input type="number" id="set-dashDistance" step="10"></div>
@@ -321,6 +323,7 @@
         let serverHeight = 900;
 
         let gameState = { players: {}, projectiles: [], gameOver: false };
+        let globalConfig = {}; // Added globalConfig for minChargeTime reference
 
         const inputState = {
             up: false, down: false, left: false, right: false,
@@ -360,6 +363,7 @@
                         }
 
                         if (msg.settings) {
+                            globalConfig = msg.settings; // Store settings globally
                             document.getElementById('set-boardWidth').value = msg.settings.boardWidth || 1600;
                             document.getElementById('set-boardHeight').value = msg.settings.boardHeight || 900;
                             document.getElementById('set-radius').value = msg.settings.playerRadius;
@@ -367,6 +371,7 @@
                             document.getElementById('set-missileSpeed').value = msg.settings.missileSpeed;
                             document.getElementById('set-superMissileSpeed').value = msg.settings.superMissileSpeed;
                             document.getElementById('set-reflectedMissileSpeed').value = msg.settings.reflectedMissileSpeed || 3000;
+                            document.getElementById('set-minChargeTime').value = msg.settings.minChargeTime || 0.15;
                             document.getElementById('set-maxChargeTime').value = msg.settings.maxChargeTime;
                             document.getElementById('set-chargeMult').value = msg.settings.chargeSpeedMult;
                             document.getElementById('set-dashDistance').value = msg.settings.dashDistance;
@@ -383,6 +388,7 @@
                         gameState = msg.state;
 
                         if (msg.settings) {
+                            globalConfig = msg.settings; // Update globalConfig with latest settings
                             if (serverWidth !== msg.settings.boardWidth || serverHeight !== msg.settings.boardHeight) {
                                 serverWidth = msg.settings.boardWidth || 1600;
                                 serverHeight = msg.settings.boardHeight || 900;
@@ -479,6 +485,7 @@
                         missileSpeed: parseFloat(document.getElementById('set-missileSpeed').value),
                         superMissileSpeed: parseFloat(document.getElementById('set-superMissileSpeed').value),
                         reflectedMissileSpeed: parseFloat(document.getElementById('set-reflectedMissileSpeed').value),
+                        minChargeTime: parseFloat(document.getElementById('set-minChargeTime').value),
                         maxChargeTime: parseFloat(document.getElementById('set-maxChargeTime').value),
                         chargeSpeedMult: parseFloat(document.getElementById('set-chargeMult').value),
                         dashDistance: parseFloat(document.getElementById('set-dashDistance').value),
@@ -596,9 +603,21 @@
                 if (p.isCharging) {
                     ctx.beginPath();
                     const startAngle = -Math.PI / 2;
-                    const endAngle = startAngle + (p.chargeTime / p.maxChargeTime) * Math.PI * 2;
+                    let chargeRatio = 0;
+
+                    const minCharge = globalConfig ? globalConfig.minChargeTime : 0.15;
+                    chargeRatio = Math.min(1.0, p.chargeTime / p.maxChargeTime);
+
+                    let ringColor = 'rgba(231, 76, 60, 0.7)'; // Red (Under min charge)
+                    if (p.chargeTime >= p.maxChargeTime) {
+                        ringColor = '#f1c40f'; // Yellow (Max charged)
+                    } else if (p.chargeTime >= minCharge) {
+                        ringColor = 'white';   // White (Ready to fire)
+                    }
+
+                    const endAngle = startAngle + chargeRatio * Math.PI * 2;
                     ctx.arc(p.x, p.y, p.radius + 8, startAngle, endAngle);
-                    ctx.strokeStyle = p.chargeTime >= p.maxChargeTime ? '#f1c40f' : 'white';
+                    ctx.strokeStyle = ringColor;
                     ctx.lineWidth = 4;
                     ctx.stroke();
                 }
@@ -665,15 +684,18 @@
                 }
 
                 if (p.isCharging && id === myRole && !p.isDashing) {
-                    ctx.beginPath();
-                    let dx = inputState.mouseX - p.x;
-                    let dy = inputState.mouseY - p.y;
-                    let dist = Math.hypot(dx, dy) || 1;
-                    ctx.moveTo(p.x + (dx / dist) * p.radius, p.y + (dy / dist) * p.radius);
-                    ctx.lineTo(p.x + (dx / dist) * 100, p.y + (dy / dist) * 100);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
+                    const minCharge = globalConfig ? globalConfig.minChargeTime : 0.15;
+                    if (p.chargeTime >= minCharge) {
+                        ctx.beginPath();
+                        let dx = inputState.mouseX - p.x;
+                        let dy = inputState.mouseY - p.y;
+                        let dist = Math.hypot(dx, dy) || 1;
+                        ctx.moveTo(p.x + (dx / dist) * p.radius, p.y + (dy / dist) * p.radius);
+                        ctx.lineTo(p.x + (dx / dist) * 100, p.y + (dy / dist) * 100);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
                 }
             }
 
