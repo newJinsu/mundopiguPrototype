@@ -18,25 +18,33 @@
         }
 
         #sidebar {
+            position: absolute;
+            top: 60px;
+            left: 20px;
             width: 350px;
-            background-color: #2c3e50;
-            display: flex;
+            max-height: calc(100vh - 80px);
+            background-color: rgba(44, 62, 80, 0.85);
+            border-radius: 10px;
+            display: none;
             flex-direction: column;
             padding: 15px;
             box-sizing: border-box;
             overflow-y: auto;
-            border-right: 2px solid #1a252f;
-            z-index: 10;
+            border: 2px solid #1a252f;
+            z-index: 1000;
         }
 
         #game-container {
             flex: 1;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             position: relative;
             background-color: #111;
             overflow: hidden;
+            box-sizing: border-box;
+            padding: 20px;
         }
 
         canvas {
@@ -151,49 +159,80 @@
             border-radius: 3px;
         }
 
-        #hp-container {
-            margin-bottom: 20px;
+        #hp-wrapper {
+            width: 100%;
+            max-width: 1200px;
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .team-hp-col {
+            display: grid;
+            grid-template-columns: repeat(3, 180px);
+            grid-template-rows: auto;
+            gap: 8px;
+            /* Blue side layout (Left to Right filling) */
+            justify-content: start;
+            align-content: start;
+        }
+
+        .team-hp-col.right {
+            /* Red side layout (Right to Left filling) */
+            justify-content: end;
+            direction: rtl;
+            /* This fills children right-to-left naturally */
+        }
+
+        .team-hp-col.right>* {
+            direction: ltr;
+            /* Reset text direction inside the box */
         }
 
         .hp-box {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #555;
-            display: none;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 8px;
+            border-radius: 6px;
+            transition: opacity 0.3s;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .hp-box h4 {
-            margin: 0 0 5px 0;
-            font-size: 14px;
-        }
+
 
         .hp-bar-bg {
             width: 100%;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            height: 24px;
+            background-color: #555;
             border-radius: 4px;
             overflow: hidden;
-            border: 1px solid #fff;
             position: relative;
         }
 
         .hp-bar-fill {
             height: 100%;
-            transition: width 0.1s linear;
+            transition: width 0.1s;
         }
 
         .hp-text {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 12px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            box-sizing: border-box;
+            font-size: 13px;
             font-weight: bold;
+            color: white;
             text-shadow: 1px 1px 2px black;
+            pointer-events: none;
         }
 
         #settings-toggle {
@@ -227,88 +266,268 @@
         #apply-settings:hover {
             background-color: #d35400;
         }
+
+        /* Lobby Styles */
+        #lobby-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(26, 26, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            /* Above everything else */
+        }
+
+        #lobby-title {
+            font-size: 48px;
+            color: #f1c40f;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+        }
+
+        #create-room-btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 40px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        #create-room-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .room-list-container {
+            width: 80%;
+            max-width: 800px;
+            background: #2c3e50;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .room-list-container h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 10px;
+        }
+
+        #room-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .room-item {
+            background: #34495e;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .room-info {
+            font-size: 18px;
+        }
+
+        .room-status {
+            font-weight: bold;
+        }
+
+        .room-status.waiting {
+            color: #f1c40f;
+        }
+
+        .room-status.playing {
+            color: #e74c3c;
+        }
+
+        .join-btn {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .join-btn:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+
+        .join-btn:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+        }
+
+        /* Hide game UI initially */
+        #game-layout {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 
 <body>
-    <div id="sidebar">
-        <div id="connection-status" style="color: #f39c12;">서버 연결 중...</div>
-
-        <div id="hp-container">
-            <div class="hp-box" id="p1-hp-box">
-                <h4 style="color: #3498db;">Player 1 (🔵)</h4>
-                <div class="hp-bar-bg">
-                    <div id="p1-hp-fill" class="hp-bar-fill" style="background-color: #3498db; width: 100%;"></div>
-                    <div id="p1-hp-text" class="hp-text">100 / 100</div>
-                </div>
-            </div>
-            <div class="hp-box" id="p2-hp-box">
-                <h4 style="color: #e74c3c;">Player 2 (🔴)</h4>
-                <div class="hp-bar-bg">
-                    <div id="p2-hp-fill" class="hp-bar-fill" style="background-color: #e74c3c; width: 100%;"></div>
-                    <div id="p2-hp-text" class="hp-text">100 / 100</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="ui">
-            <h2>문도 피구 (Online)</h2>
-            <div>
-                <h3 id="role-text" style="color: #3498db; margin: 0 0 5px 0;"></h3>
-                <p>이동: W, A, S, D</p>
-                <p>대쉬: Shift 또는 Space</p>
-                <p>공격: 마우스 왼쪽 클릭 & 드래그 (조준)</p>
-                <p>차징: 클릭 유지 시 기모음</p>
-                <p>반사: 마우스 우클릭</p>
-            </div>
-        </div>
-
-        <button id="settings-toggle">설정 패널 열기/닫기 ⚙️</button>
-        <div id="settings-panel" style="display: none; flex-direction: column;">
-            <h3>게임 설정</h3>
-            <div class="setting-row"><label>게임판 가로</label><input type="number" id="set-boardWidth" step="50"></div>
-            <div class="setting-row"><label>게임판 세로</label><input type="number" id="set-boardHeight" step="50"></div>
-            <div class="setting-row"><label>캐릭터 크기</label><input type="number" id="set-radius" step="1"></div>
-            <div class="setting-row"><label>이동속도</label><input type="number" id="set-baseSpeed" step="10"></div>
-            <div class="setting-row"><label>미사일 속도</label><input type="number" id="set-missileSpeed" step="10"></div>
-            <div class="setting-row"><label>차지 미사일 속도</label><input type="number" id="set-superMissileSpeed" step="10">
-            </div>
-            <div class="setting-row"><label>반사 미사일 속도</label><input type="number" id="set-reflectedMissileSpeed"
-                    step="10">
-            </div>
-            <div class="setting-row"><label>최소 차지 시간(초)</label><input type="number" id="set-minChargeTime" step="0.05">
-            </div>
-            <div class="setting-row"><label>최대 차지 시간(초)</label><input type="number" id="set-maxChargeTime" step="0.1">
-            </div>
-            <div class="setting-row"><label>차지 중 이속 비율</label><input type="number" id="set-chargeMult" step="0.1"></div>
-            <div class="setting-row"><label>대쉬 거리</label><input type="number" id="set-dashDistance" step="10"></div>
-            <div class="setting-row"><label>대쉬 쿨다운(초)</label><input type="number" id="set-dashCooldown" step="0.1">
-            </div>
-            <div class="setting-row"><label>반사 쿨다운(초)</label><input type="number" id="set-reflectCooldown" step="0.1">
-            </div>
-            <div class="setting-row"><label>공격 쿨다운(초)</label><input type="number" id="set-attackCooldown" step="0.1">
-            </div>
-            <div class="setting-row"><label>최대 체력</label><input type="number" id="set-maxHP" step="10"></div>
-            <div class="setting-row"><label>일반 데미지</label><input type="number" id="set-missileDamage" step="5"></div>
-            <div class="setting-row"><label>차지 데미지</label><input type="number" id="set-superMissileDamage" step="5">
-            </div>
-            <div class="setting-row"><label>일반 미사일 크기</label><input type="number" id="set-missileRadius" step="1"></div>
-            <div class="setting-row"><label>차지 미사일 크기</label><input type="number" id="set-superMissileRadius" step="1">
-            </div>
-            <button id="apply-settings">서버에 적용하기</button>
+    <!-- Lobby UI -->
+    <div id="lobby-container">
+        <h1 id="lobby-title">문도 피구 - 서버 로비</h1>
+        <button id="create-room-btn">방 만들기</button>
+        <div class="room-list-container">
+            <h2>대기 중인 방 목록</h2>
+            <ul id="room-list">
+                <!-- Javascript will populate this -->
+            </ul>
         </div>
     </div>
 
-    <div id="game-container">
-        <div id="game-over">
-            <h1 id="winner-text">승리!</h1>
-            <p>게임 종료</p>
-            <button id="restart-btn">재시작 (R)</button>
+    <!-- Rest of Game UI hidden initially -->
+    <div id="game-layout">
+
+        <button id="main-menu-toggle"
+            style="position: absolute; bottom: 15px; left: 15px; z-index: 1001; padding: 10px 15px; background-color: #f39c12; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">🤔
+            게임방법</button>
+
+        <div id="sidebar">
+            <div id="connection-status" style="color: #f39c12;">서버 연결 중...</div>
+
+
+
+            <div id="waiting-ui"
+                style="display: none; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <p style="color: #f1c40f; margin-top: 0; font-weight: bold;">대기실 (Waiting for players...)</p>
+                <p id="sidebar-waiting-player-count" style="color: white; margin-bottom: 15px;">현재 인원: 1명 (게임 시작 시 최소 2명
+                    필요)</p>
+                <button id="start-game-btn"
+                    style="padding: 10px 20px; font-size: 16px; background-color: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; transition: background-color 0.2s;">게임
+                    시작 (Start Game)</button>
+            </div>
+
+            <div id="instructions">
+            </div>
+
+            <div id="ui">
+                <h2>문도 피구 (Online)</h2>
+                <div>
+                    <h3 id="role-text" style="color: #3498db; margin: 0 0 5px 0;"></h3>
+                    <p>이동: W, A, S, D</p>
+                    <p>대쉬: Shift 또는 Space</p>
+                    <p>공격: 마우스 왼쪽 클릭 & 드래그 (조준)</p>
+                    <p>차징: 클릭 유지 시 기모음</p>
+                    <p>반사: 마우스 우클릭</p>
+                </div>
+            </div>
+
+
+            <div id="settings-panel" style="display: none; flex-direction: column;">
+                <h3>게임 설정</h3>
+                <div class="setting-row"><label>게임판 가로</label><input type="number" id="set-boardWidth" step="50"></div>
+                <div class="setting-row"><label>게임판 세로</label><input type="number" id="set-boardHeight" step="50"></div>
+                <div class="setting-row"><label>캐릭터 크기</label><input type="number" id="set-radius" step="1"></div>
+                <div class="setting-row"><label>이동속도</label><input type="number" id="set-baseSpeed" step="10"></div>
+                <div class="setting-row"><label>미사일 속도</label><input type="number" id="set-missileSpeed" step="10">
+                </div>
+                <div class="setting-row"><label>차지 미사일 속도</label><input type="number" id="set-superMissileSpeed"
+                        step="10">
+                </div>
+                <div class="setting-row"><label>반사 미사일 속도</label><input type="number" id="set-reflectedMissileSpeed"
+                        step="10">
+                </div>
+                <div class="setting-row"><label>최소 차지 시간(초)</label><input type="number" id="set-minChargeTime"
+                        step="0.05">
+                </div>
+                <div class="setting-row"><label>최대 차지 시간(초)</label><input type="number" id="set-maxChargeTime"
+                        step="0.1">
+                </div>
+                <div class="setting-row"><label>차지 중 이속 비율</label><input type="number" id="set-chargeMult" step="0.1">
+                </div>
+                <div class="setting-row"><label>대쉬 거리</label><input type="number" id="set-dashDistance" step="10"></div>
+                <div class="setting-row"><label>대쉬 쿨다운(초)</label><input type="number" id="set-dashCooldown" step="0.1">
+                </div>
+                <div class="setting-row"><label>반사 쿨다운(초)</label><input type="number" id="set-reflectCooldown"
+                        step="0.1">
+                </div>
+                <div class="setting-row"><label>공격 쿨다운(초)</label><input type="number" id="set-attackCooldown"
+                        step="0.1">
+                </div>
+                <div class="setting-row"><label>최대 체력</label><input type="number" id="set-maxHP" step="10"></div>
+                <div class="setting-row"><label>일반 데미지</label><input type="number" id="set-missileDamage" step="5">
+                </div>
+                <div class="setting-row"><label>차지 데미지</label><input type="number" id="set-superMissileDamage" step="5">
+                </div>
+                <div class="setting-row"><label>일반 미사일 크기</label><input type="number" id="set-missileRadius" step="1">
+                </div>
+                <div class="setting-row"><label>차지 미사일 크기</label><input type="number" id="set-superMissileRadius"
+                        step="1">
+                </div>
+                <div class="setting-row"><label>팀당 최대 플레이어</label><input type="number" id="set-maxPlayersPerTeam"
+                        step="1"></div>
+                <button id="apply-settings">서버에 적용하기</button>
+            </div>
         </div>
-        <canvas id="gameCanvas"></canvas>
-    </div>
+
+        <div id="game-container">
+            <div id="hp-wrapper">
+                <div id="blue-hp-container" class="team-hp-col left"></div>
+                <div id="red-hp-container" class="team-hp-col right"></div>
+            </div>
+            <div id="game-over">
+                <h1 id="winner-text">승리!</h1>
+                <p>게임 종료</p>
+                <button id="restart-btn">재시작 (R)</button>
+                <button id="leave-room-btn"
+                    style="margin-top: 10px; padding: 10px 20px; font-size: 18px; cursor: pointer; background-color: #e74c3c; color: white; border: none; border-radius: 5px; font-weight: bold;">로비로
+                    나가기</button>
+            </div>
+
+            <div id="canvas-waiting-overlay"
+                style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto;">
+                <h1 style="color: #f1c40f; font-size: 64px; margin-bottom: 20px; text-shadow: 2px 2px 4px black;">대기실
+                </h1>
+                <p id="overlay-waiting-player-count"
+                    style="color: white; font-size: 24px; margin-bottom: 40px; text-shadow: 1px 1px 2px black;">다른 플레이어를
+                    기다리는 중입니다... (현재 인원: 1명)</p>
+                <button id="canvas-start-btn"
+                    style="padding: 15px 40px; font-size: 24px; background-color: #2ecc71; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: background-color 0.2s;">게임
+                    시작 (Start Game)</button>
+            </div>
+
+            <canvas id="gameCanvas"></canvas>
+        </div>
+    </div> <!-- Close game-layout -->
 
     <script>
+        window.onerror = function (msg, url, line, col, error) {
+            const errDiv = document.createElement('div');
+            errDiv.style.position = 'absolute';
+            errDiv.style.top = '10px';
+            errDiv.style.left = '10px';
+            errDiv.style.color = 'red';
+            errDiv.style.background = 'white';
+            errDiv.style.padding = '10px';
+            errDiv.style.zIndex = '9999';
+            errDiv.style.fontSize = '20px';
+            errDiv.innerHTML = 'Error: ' + msg + ' LINE: ' + line;
+            document.body.appendChild(errDiv);
+        };
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gameOverUI = document.getElementById('game-over');
@@ -317,10 +536,17 @@
         const roleText = document.getElementById('role-text');
         const gameContainer = document.getElementById('game-container');
 
+        // Lobby Elements
+        const lobbyContainer = document.getElementById('lobby-container');
+        const gameLayout = document.getElementById('game-layout');
+        const roomListElement = document.getElementById('room-list');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const leaveRoomBtn = document.getElementById('leave-room-btn');
+
         let ws;
         let myRole = "";
-        let serverWidth = 1600;
-        let serverHeight = 900;
+        let serverWidth = 1920;
+        let serverHeight = 1080;
 
         let gameState = { players: {}, projectiles: [], gameOver: false };
         let globalConfig = {}; // Added globalConfig for minChargeTime reference
@@ -345,27 +571,67 @@
             ws.onmessage = (e) => {
                 try {
                     const msg = JSON.parse(e.data);
-                    if (msg.type === "init") {
+
+                    if (msg.type === "room_list") {
+                        // Lobby View
+                        lobbyContainer.style.display = "flex";
+                        gameLayout.style.display = "none";
+
+                        roomListElement.innerHTML = ''; // clear list
+
+                        if (msg.rooms && msg.rooms.length > 0) {
+                            msg.rooms.forEach(room => {
+                                const li = document.createElement('li');
+                                li.className = 'room-item';
+
+                                const statusClass = room.status === "Waiting" ? "waiting" : "playing";
+                                const canJoin = room.playerCount < room.maxPlayers;
+
+                                li.innerHTML = `
+                                    <div class="room-info">
+                                        <strong>방 ID: ${room.id}</strong> 
+                                        &nbsp;|&nbsp; 인원: ${room.playerCount}/${room.maxPlayers}
+                                        &nbsp;|&nbsp; 상태: <span class="room-status ${statusClass}">${room.status}</span>
+                                    </div>
+                                    <button class="join-btn" ${!canJoin ? 'disabled' : ''} data-id="${room.id}">접속하기</button>
+                                `;
+                                roomListElement.appendChild(li);
+                            });
+
+                            // Attach event listeners to new buttons
+                            document.querySelectorAll('.join-btn').forEach(btn => {
+                                btn.addEventListener('click', (e) => {
+                                    const roomId = e.target.getAttribute('data-id');
+                                    if (ws && ws.readyState === WebSocket.OPEN) {
+                                        ws.send(JSON.stringify({ type: "JOIN_ROOM", roomId: roomId }));
+                                    }
+                                });
+                            });
+                        } else {
+                            roomListElement.innerHTML = '<li class="room-item" style="justify-content: center; color: #95a5a6;">현재 만들어진 방이 없습니다. 새 방을 만들어보세요!</li>';
+                        }
+                    } else if (msg.type === "init") {
+                        // Game View
+                        lobbyContainer.style.display = "none";
+                        gameLayout.style.display = "flex";
+
                         myRole = msg.role;
                         serverWidth = msg.width;
                         serverHeight = msg.height;
                         resize();
 
-                        if (myRole === "p1") {
-                            roleText.innerText = "🔵 당신은 Player 1 (Left)";
-                            roleText.style.color = "#3498db";
-                        } else if (myRole === "p2") {
-                            roleText.innerText = "🔴 당신은 Player 2 (Right 반전)";
-                            roleText.style.color = "#e74c3c";
+                        if (myRole.startsWith("p")) {
+                            // The role text will be set in updateUI based on team
                         } else {
                             roleText.innerText = "👀 관전자 모드";
                             roleText.style.color = "#95a5a6";
                         }
 
+                        // We will build the HP UI on the first state update.
                         if (msg.settings) {
                             globalConfig = msg.settings; // Store settings globally
-                            document.getElementById('set-boardWidth').value = msg.settings.boardWidth || 1600;
-                            document.getElementById('set-boardHeight').value = msg.settings.boardHeight || 900;
+                            document.getElementById('set-boardWidth').value = msg.settings.boardWidth || 1920;
+                            document.getElementById('set-boardHeight').value = msg.settings.boardHeight || 1080;
                             document.getElementById('set-radius').value = msg.settings.playerRadius;
                             document.getElementById('set-baseSpeed').value = msg.settings.baseSpeed;
                             document.getElementById('set-missileSpeed').value = msg.settings.missileSpeed;
@@ -383,46 +649,32 @@
                             document.getElementById('set-superMissileDamage').value = msg.settings.superMissileDamage || 35;
                             document.getElementById('set-missileRadius').value = msg.settings.missileRadius || 12;
                             document.getElementById('set-superMissileRadius').value = msg.settings.superMissileRadius || 18;
+                            document.getElementById('set-maxPlayersPerTeam').value = msg.settings.maxPlayersPerTeam || 1;
                         }
                     } else if (msg.type === "state") {
                         gameState = msg.state;
 
-                        if (msg.settings) {
-                            globalConfig = msg.settings; // Update globalConfig with latest settings
-                            if (serverWidth !== msg.settings.boardWidth || serverHeight !== msg.settings.boardHeight) {
-                                serverWidth = msg.settings.boardWidth || 1600;
-                                serverHeight = msg.settings.boardHeight || 900;
-                                resize();
+                        // Set Role Text properly if we now know our team
+                        if (gameState.players && gameState.players[myRole]) {
+                            const myTeam = gameState.players[myRole].team;
+                            if (myTeam === "blue") {
+                                roleText.innerText = "🔵 당신은 Blue 팀 (Left)";
+                                roleText.style.color = "#3498db";
+                            } else if (myTeam === "red") {
+                                roleText.innerText = "🔴 당신은 Red 팀 (Right 반전)";
+                                roleText.style.color = "#e74c3c";
                             }
                         }
 
-                        const p1 = gameState.players["p1"];
-                        if (p1) {
-                            document.getElementById('p1-hp-box').style.display = 'block';
-                            const p1MaxHp = p1.maxHP || 100;
-                            const p1Percent = Math.max(0, (p1.hp / p1MaxHp) * 100);
-                            document.getElementById('p1-hp-fill').style.width = `${p1Percent}%`;
-                            document.getElementById('p1-hp-text').innerText = `${p1.hp} / ${p1MaxHp}`;
-                        } else {
-                            document.getElementById('p1-hp-box').style.display = 'none';
-                        }
+                        updateUI();
 
-                        const p2 = gameState.players["p2"];
-                        if (p2) {
-                            document.getElementById('p2-hp-box').style.display = 'block';
-                            const p2MaxHp = p2.maxHP || 100;
-                            const p2Percent = Math.max(0, (p2.hp / p2MaxHp) * 100);
-                            document.getElementById('p2-hp-fill').style.width = `${p2Percent}%`;
-                            document.getElementById('p2-hp-text').innerText = `${p2.hp} / ${p2MaxHp}`;
-                        } else {
-                            document.getElementById('p2-hp-box').style.display = 'none';
-                        }
-
-                        if (gameState.gameOver) {
-                            gameOverUI.style.display = 'block';
-                            winnerText.innerText = gameState.winner;
-                        } else {
-                            gameOverUI.style.display = 'none';
+                        if (msg.settings) {
+                            globalConfig = msg.settings; // Update globalConfig with latest settings
+                            if (serverWidth !== msg.settings.boardWidth || serverHeight !== msg.settings.boardHeight) {
+                                serverWidth = msg.settings.boardWidth || 1920;
+                                serverHeight = msg.settings.boardHeight || 1080;
+                                resize();
+                            }
                         }
                     }
                 } catch (err) { }
@@ -434,6 +686,141 @@
                 setTimeout(connect, 3000);
             };
         }
+
+        function updateUI() {
+            if (!gameState || !gameState.players) return;
+
+            const blueContainer = document.getElementById('blue-hp-container');
+            const redContainer = document.getElementById('red-hp-container');
+
+            // Count current drawn bars
+            const currentBars = blueContainer.children.length + redContainer.children.length;
+
+            // Rebuild HP bars if player count changes or on first load
+            if (currentBars !== Object.keys(gameState.players).length) {
+                blueContainer.innerHTML = '';
+                redContainer.innerHTML = '';
+
+                // Sort players so Blue is on top, Red on bottom
+                const sortedIds = Object.keys(gameState.players).sort((a, b) => {
+                    if (gameState.players[a].team !== gameState.players[b].team) {
+                        return gameState.players[a].team === 'blue' ? -1 : 1;
+                    }
+                    return a.localeCompare(b);
+                });
+
+                sortedIds.forEach(id => {
+                    const p = gameState.players[id];
+                    const icon = p.team === 'blue' ? '🔵' : '🔴';
+                    const color = p.team === 'blue' ? '#3498db' : '#e74c3c';
+                    const name = id === myRole ? `${id} (나)` : id;
+
+                    const div = document.createElement('div');
+                    div.className = 'hp-box';
+                    // Content rearranged to place name and health inside the single bar.
+                    div.innerHTML = `
+                        <div class="hp-bar-bg">
+                            <div id="${id}-hp-fill" class="hp-bar-fill" style="background-color: ${color}; width: 100%;"></div>
+                            <div id="${id}-hp-text" class="hp-text">
+                                <span style="color: ${color};">${icon} ${name}</span>
+                                <span>${p.hp} / ${p.maxHP}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    if (p.team === 'blue') {
+                        blueContainer.appendChild(div);
+                    } else {
+                        redContainer.appendChild(div);
+                    }
+                });
+            }
+
+            // Update values
+            for (const id in gameState.players) {
+                const p = gameState.players[id];
+                const fill = document.getElementById(`${id}-hp-fill`);
+                const text = document.getElementById(`${id}-hp-text`);
+                if (fill && text) {
+                    const hpPercent = Math.max(0, (p.hp / p.maxHP) * 100);
+                    fill.style.width = hpPercent + '%';
+
+                    const icon = p.team === 'blue' ? '🔵' : '🔴';
+                    const color = p.team === 'blue' ? '#3498db' : '#e74c3c';
+                    const name = id === myRole ? `${id} (나)` : id;
+
+                    text.innerHTML = `
+                        <span style="color: ${color};">${icon} ${name}</span>
+                        <span>${Math.max(0, p.hp)} / ${p.maxHP}</span>
+                    `;
+
+                    if (p.hp <= 0) {
+                        fill.parentElement.parentElement.style.opacity = '0.5';
+                    } else {
+                        fill.parentElement.parentElement.style.opacity = '1.0';
+                    }
+                }
+            }
+
+            const waitingUI = document.getElementById('waiting-ui');
+            const canvasWaitingOverlay = document.getElementById('canvas-waiting-overlay');
+            if (gameState.status === 'waiting') {
+                waitingUI.style.display = 'block';
+                canvasWaitingOverlay.style.display = 'flex';
+                gameOverUI.style.display = 'none';
+
+                const pCount = Object.keys(gameState.players).length;
+                const sidebarPlayerCountText = document.getElementById('sidebar-waiting-player-count');
+                const overlayPlayerCountText = document.getElementById('overlay-waiting-player-count');
+                const sidebarStartBtn = document.getElementById('start-game-btn');
+                const canvasStartBtn = document.getElementById('canvas-start-btn');
+
+                if (sidebarPlayerCountText && overlayPlayerCountText) {
+                    const countText = `현재 인원: ${pCount}명 ` + (pCount < 2 ? '(최소 2명 필요)' : '(시작 가능)');
+                    sidebarPlayerCountText.innerText = countText;
+                    overlayPlayerCountText.innerText = `다른 플레이어를 기다리는 중입니다... (${countText})`;
+
+                    if (pCount < 2) {
+                        sidebarStartBtn.disabled = true;
+                        canvasStartBtn.disabled = true;
+                        canvasStartBtn.style.backgroundColor = '#7f8c8d';
+                        sidebarStartBtn.style.backgroundColor = '#7f8c8d';
+                        canvasStartBtn.style.cursor = 'not-allowed';
+                        sidebarStartBtn.style.cursor = 'not-allowed';
+                    } else {
+                        sidebarStartBtn.disabled = false;
+                        canvasStartBtn.disabled = false;
+                        canvasStartBtn.style.backgroundColor = '#2ecc71';
+                        sidebarStartBtn.style.backgroundColor = '#2ecc71';
+                        canvasStartBtn.style.cursor = 'pointer';
+                        sidebarStartBtn.style.cursor = 'pointer';
+                    }
+                }
+            } else if (gameState.status === 'playing') {
+                waitingUI.style.display = 'none';
+                canvasWaitingOverlay.style.display = 'none';
+                gameOverUI.style.display = 'none';
+            } else if (gameState.status === 'finished') {
+                waitingUI.style.display = 'none';
+                canvasWaitingOverlay.style.display = 'none';
+                if (gameOverUI.style.display !== 'block') {
+                    gameOverUI.style.display = 'block';
+                    winnerText.innerText = gameState.winner;
+                }
+            }
+        }
+
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "START_GAME" }));
+            }
+        });
+
+        document.getElementById('canvas-start-btn').addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "START_GAME" }));
+            }
+        });
 
         window.addEventListener('keydown', e => {
             if (e.code === 'KeyW') inputState.up = true;
@@ -447,11 +834,31 @@
                     ws.send(JSON.stringify({ type: "restart" }));
                 }
             }
+
+            if (e.code === 'KeyP') {
+                const panel = document.getElementById('settings-panel');
+                if (panel) {
+                    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+                }
+            }
         });
 
         document.getElementById('restart-btn').addEventListener('click', () => {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: "restart" }));
+            }
+        });
+
+        createRoomBtn.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "CREATE_ROOM" }));
+            }
+        });
+
+        leaveRoomBtn.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "LEAVE_ROOM" }));
+                gameOverUI.style.display = 'none';
             }
         });
 
@@ -463,12 +870,14 @@
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'Space') inputState.dash = false;
         });
 
-        const settingsToggle = document.getElementById('settings-toggle');
-        if (settingsToggle) {
-            settingsToggle.addEventListener('click', () => {
-                const panel = document.getElementById('settings-panel');
-                if (panel) {
-                    panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+
+
+        const mainMenuToggle = document.getElementById('main-menu-toggle');
+        if (mainMenuToggle) {
+            mainMenuToggle.addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    sidebar.style.display = sidebar.style.display === 'flex' ? 'none' : 'flex';
                 }
             });
         }
@@ -496,7 +905,8 @@
                         missileDamage: parseInt(document.getElementById('set-missileDamage').value) || 15,
                         superMissileDamage: parseInt(document.getElementById('set-superMissileDamage').value) || 35,
                         missileRadius: parseFloat(document.getElementById('set-missileRadius').value) || 12,
-                        superMissileRadius: parseFloat(document.getElementById('set-superMissileRadius').value) || 18
+                        superMissileRadius: parseFloat(document.getElementById('set-superMissileRadius').value) || 18,
+                        maxPlayersPerTeam: parseInt(document.getElementById('set-maxPlayersPerTeam').value) || 1
                     };
                     ws.send(JSON.stringify({ type: "update_settings", settings: settings }));
                 }
@@ -514,31 +924,48 @@
         }
 
         canvas.addEventListener('mousemove', e => {
+            if (gameState && gameState.gameOver) return;
             const rect = canvas.getBoundingClientRect();
-            let rawX = e.clientX - rect.left;
-            let rawY = e.clientY - rect.top;
+            // Scale logic
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
 
-            let sX = rawX * (canvas.width / rect.width);
-            let sY = rawY * (canvas.height / rect.height);
+            let bx = (e.clientX - rect.left) * scaleX;
+            let by = (e.clientY - rect.top) * scaleY;
 
-            if (myRole === "p2") {
-                sX = serverWidth - sX;
-                sY = serverHeight - sY;
+            // Handle rotation inverse logic for aim
+            let shouldRotate = false;
+            if (myRole && gameState && gameState.players && gameState.players[myRole]) {
+                if (gameState.players[myRole].team === "red") {
+                    shouldRotate = true;
+                }
             }
 
-            inputState.mouseX = sX;
-            inputState.mouseY = sY;
+            if (shouldRotate) {
+                bx = canvas.width - bx;
+                by = canvas.height - by;
+            }
+
+            inputState.mouseX = bx;
+            inputState.mouseY = by;
         });
 
         setInterval(() => {
-            if (ws && ws.readyState === WebSocket.OPEN && myRole !== "spectator") {
+            if (ws && ws.readyState === WebSocket.OPEN && myRole && myRole !== "spectator") {
                 let payload = { type: "input", ...inputState };
-                if (myRole === "p2") {
+
+                let shouldRotateInput = false;
+                if (gameState && gameState.players && gameState.players[myRole] && gameState.players[myRole].team === "red") {
+                    shouldRotateInput = true;
+                }
+
+                if (shouldRotateInput) {
                     payload.up = inputState.down;
                     payload.down = inputState.up;
                     payload.left = inputState.right;
                     payload.right = inputState.left;
                 }
+
                 ws.send(JSON.stringify(payload));
             }
         }, 16);
@@ -555,9 +982,11 @@
 
             let displayWidth, displayHeight;
             if (containerRatio > targetRatio) {
-                displayHeight = containerHeight * 0.95;
+                // Height constrained
+                displayHeight = containerHeight * 0.85;
                 displayWidth = displayHeight * targetRatio;
             } else {
+                // Width constrained
                 displayWidth = containerWidth * 0.95;
                 displayHeight = displayWidth / targetRatio;
             }
@@ -582,7 +1011,15 @@
 
             ctx.save();
 
-            if (myRole === "p2") {
+            // Determine rotation based on team, not just p2
+            let shouldRotateBoard = false;
+            if (myRole && gameState.players[myRole]) {
+                if (gameState.players[myRole].team === "red") {
+                    shouldRotateBoard = true;
+                }
+            }
+
+            if (shouldRotateBoard) {
                 ctx.translate(serverWidth / 2, serverHeight / 2);
                 ctx.rotate(Math.PI);
                 ctx.translate(-serverWidth / 2, -serverHeight / 2);
@@ -597,8 +1034,13 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            for (let id in gameState.players) {
-                let p = gameState.players[id];
+            // Draw Players
+            for (const id in gameState.players) {
+                const p = gameState.players[id];
+                if (p.hp <= 0) continue; // Don't draw dead players
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
 
                 if (p.isCharging) {
                     ctx.beginPath();
@@ -616,21 +1058,21 @@
                     }
 
                     const endAngle = startAngle + chargeRatio * Math.PI * 2;
-                    ctx.arc(p.x, p.y, p.radius + 8, startAngle, endAngle);
+                    ctx.arc(0, 0, p.radius + 8, startAngle, endAngle);
                     ctx.strokeStyle = ringColor;
                     ctx.lineWidth = 4;
                     ctx.stroke();
                 }
 
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = id === myRole ? '#f1c40f' : p.color; // Yellow if mine
 
                 if (p.isDashing) {
                     ctx.globalAlpha = 0.5;
                     ctx.beginPath();
-                    ctx.arc(p.x - p.dashDir.x * 20, p.y - p.dashDir.y * 20, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = p.color;
+                    ctx.arc(-p.dashDir.x * 20, -p.dashDir.y * 20, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = id === myRole ? '#f1c40f' : p.color;
                     ctx.globalAlpha = 0.2;
                     ctx.fill();
                 }
@@ -639,7 +1081,7 @@
 
                 if (p.isReflecting) {
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius + 10, 0, Math.PI * 2);
+                    ctx.arc(0, 0, p.radius + 10, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(46, 204, 113, 0.4)';
                     ctx.fill();
                     ctx.strokeStyle = '#2ecc71';
@@ -649,7 +1091,7 @@
 
                 if (p.hasDamageBuff) {
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius + 15, 0, Math.PI * 2);
+                    ctx.arc(0, 0, p.radius + 15, 0, Math.PI * 2);
                     ctx.strokeStyle = '#e74c3c';
                     ctx.lineWidth = 4;
                     ctx.setLineDash([8, 6]);
@@ -661,12 +1103,27 @@
                 ctx.strokeStyle = '#fff';
                 ctx.stroke();
 
+                // Draw Name inside character
+                if (id !== myRole) {
+                    ctx.save();
+                    // If the board is rotated (we are Red team), we need to rotate text 180 degrees so it faces us.
+                    if (shouldRotateBoard) {
+                        ctx.rotate(Math.PI);
+                    }
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 28px Tahoma';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(id, 0, 0); // Inside circle
+                    ctx.restore();
+                }
+
                 if (id === myRole) {
                     ctx.save();
-                    if (myRole === "p2") {
-                        ctx.translate(p.x, p.y + p.radius + 30);
+                    if (p.team === "red") {
+                        // We are already translated to (p.x, p.y).
+                        // Rotate around the player's center.
                         ctx.rotate(Math.PI);
-                        ctx.translate(-p.x, -(p.y + p.radius + 30));
                     }
                     ctx.fillStyle = '#ccc';
                     ctx.font = 'bold 12px Tahoma';
@@ -678,7 +1135,8 @@
                     if (p.reflectCooldown > 0) texts.push(`Reflect: ${p.reflectCooldown.toFixed(1)}`);
 
                     for (let i = 0; i < texts.length; i++) {
-                        ctx.fillText(texts[i], p.x, p.y + p.radius + 20 + i * 14);
+                        // Draw at relative offsets since we're translated
+                        ctx.fillText(texts[i], 0, p.radius + 20 + i * 14);
                     }
                     ctx.restore();
                 }
@@ -690,13 +1148,16 @@
                         let dx = inputState.mouseX - p.x;
                         let dy = inputState.mouseY - p.y;
                         let dist = Math.hypot(dx, dy) || 1;
-                        ctx.moveTo(p.x + (dx / dist) * p.radius, p.y + (dy / dist) * p.radius);
-                        ctx.lineTo(p.x + (dx / dist) * 100, p.y + (dy / dist) * 100);
+                        // Draw at relative offsets since we're at (p.x, p.y)
+                        ctx.moveTo((dx / dist) * p.radius, (dy / dist) * p.radius);
+                        ctx.lineTo((dx / dist) * 100, (dy / dist) * 100);
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
                         ctx.lineWidth = 2;
                         ctx.stroke();
                     }
                 }
+
+                ctx.restore();
             }
 
             if (gameState.projectiles) {
@@ -718,6 +1179,7 @@
                 });
             }
 
+            ctx.restore();
             requestAnimationFrame(draw);
         }
 
